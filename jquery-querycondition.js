@@ -3,7 +3,7 @@
  *
  * Written by zhangbiaoguang - zhangbiaoguang <zhangbg914@126.com>
  * Licensed under the MIT license
- * Version 1.0.0
+ * Version 1.0.1
  *
  */
 (function ($) {
@@ -19,8 +19,8 @@
             operatorValueField : 'name',
             operatorPlugin : {},
             rules : null,
-            conditions: ['AND', 'OR'],
-            default_condition: 'AND',
+            logicOperators: ['AND', 'OR'],
+            default_logicOperator: 'AND',
             status : {
                 groupId: 0,
                 ruleId: 0,
@@ -32,9 +32,9 @@
             var ruleId = options.status.id + '_rule_' + options.status.ruleId++;
             var filtersTpl = options.filtersTpl, operatorsTpl = options.operatorsTpl, valueTpl = '';
             if (item) {
-                filtersTpl = filtersTpl.replace('="' + item.dimension + '"', '="' + item.dimension + '"' + ' selected="selected"');
+                filtersTpl = filtersTpl.replace('="' + item.expression + '"', '="' + item.expression + '"' + ' selected="selected"');
                 operatorsTpl = operatorsTpl.replace('="' + item.operator + '"', '="' + item.operator + '"' + ' selected="selected"');
-                valueTpl = item.value;
+                valueTpl = item.value[0];
             } 
             var tpl = [
                 '<li id="' + ruleId + '" class="rule-container">',
@@ -64,7 +64,7 @@
                 btnTpl = settings.isRoot ? '' : '<button type="button" class="btn btn-xs btn-primary handle deleteGroup" data-delete="group"><span class="glyphicon glyphicon-remove"></span> 删除</button>';
             var groupId = options.status.id + '_group_' + options.status.groupId++;
             
-            if (settings.condition === 'OR') {
+            if (settings.logicOperator === 'OR') {
                 andCls = ''; 
                 orCls = 'active';
             }
@@ -91,17 +91,17 @@
             return tpl;
         };
         
-        function recursionInitContainer(rules, options) {
-            var i = 0, length = rules.length, rule = null, result = [], temp = null;
+        function recursionInitContainer(predicates, options) {
+            var i = 0, length = predicates.length, predicate = null, result = [], temp = null;
             for (; i < length; i++) {
-                rule = rules[i];
-                if (rule.rules && rule.rules.length > 0) {
-                    temp = recursionInitContainer(rule.rules, options);
+                predicate = predicates[i];
+                if (predicate.predicates && predicate.predicates.length > 0) {
+                    temp = recursionInitContainer(predicate.predicates, options);
                     if (temp) {
-                        result.push(createRuleGroupContainer(options, {'initTpl': temp, 'condition' : rule.condition}));
+                        result.push(createRuleGroupContainer(options, {'initTpl': temp, 'logicOperator' : predicate.operator}));
                     }
                 } else {
-                    result.push(createRuleContainer(options, rule));
+                    result.push(createRuleContainer(options, predicate));
                 }
             }
             return result.join('');
@@ -128,13 +128,13 @@
         function generateContent(options) {
             initOptionsTpl(options);
             var groupTpl = '', ruleTpl = '', filterPlugin = options.filterPlugin || {}, selectors = null,
-                data = options.rules || {'condition' : 'AND', 'rules' : []};
-            if (data.rules.length > 0) {
-                ruleTpl = recursionInitContainer(data.rules, options);
+                data = options.rules || {'operator' : 'AND', 'inverse' : false, 'predicates' : []};
+            if (data.predicates.length > 0) {
+                ruleTpl = recursionInitContainer(data.predicates, options);
             } else {
                 ruleTpl = createRuleContainer(options);
             }
-            groupTpl = createRuleGroupContainer(options, {'isRoot': true, 'initTpl': ruleTpl, 'condition' : data.condition});
+            groupTpl = createRuleGroupContainer(options, {'isRoot': true, 'initTpl': ruleTpl, 'logicOperator' : data.operator});
             this.empty().off('click.queryCondition').addClass('query-condition form-inline').html(groupTpl);
             
             if (filterPlugin.type && filterPlugin.config) {
@@ -192,23 +192,23 @@
         };
        
         function recursionGetRule(root) {
-            var result = {rules : []}, i = 0, $child = null, tempResult = null,
+            var result = {'predicates' : []}, i = 0, $child = null, tempResult = null,
                 children = $('> .rules-group-body > .rules-list', root).children(), length = children.length;
             if (length > 0) {
-                result.condition = $('> .rules-group-header .active input', root).val();
-                
+                result.operator = $('> .rules-group-header .active input', root).val();
+                result.inverse = false;
                 for (; i < length; i++) {
                     $child = $(children[i]);
                     if ($child.hasClass('rule-container')) {
-                        result.rules.push({
-                            'dimension' : $('[name$="_filter"]', $child).val(),
+                        result.predicates.push({
+                            'expression' : $('[name$="_filter"]', $child).val(),
                             'operator' : $('[name$="_operator"]', $child).val(),
-                            'value' : $('[name$="_value"]', $child).val()
+                            'value' : [$('[name$="_value"]', $child).val()]
                         });
                     } else {
                         tempResult = recursionGetRule($child);
-                        if (tempResult.rules.length > 0) {
-                            result.rules.push(tempResult);
+                        if (tempResult.predicates.length > 0) {
+                            result.predicates.push(tempResult);
                         }
                     }
                 }
@@ -218,7 +218,7 @@
         }
        
         this.getRules = function () {
-            var root = $('> .rules-group-container', this), status = true, result = null;
+            var root = $('> .rules-group-container', this), status = true, result = {'predicates' : []};
             
             $('.rule-container', root).each(function () {
                 var filterValue = $('.rule-filter-container select', this).val();

@@ -47,9 +47,13 @@
 }
 
 .query-condition .rules-group-container .rules-group-header .group-conditions .btn-default {
-    color: #428bca;
+    /* color: #428bca;
     background-color: #fff;
     border-color: #428bca;
+    z-index: 2; */
+    color: #BBBBBB;
+    background-color: #fff;
+    border-color: #DDDDDD;
     z-index: 2;
 }
 .query-condition .rules-group-container .rules-group-header .group-conditions .btn-default.active {
