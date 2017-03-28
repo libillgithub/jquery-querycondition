@@ -27,7 +27,7 @@
                 id : this.attr('id') || 'queryCondition'
             }
         };
-        
+
         function createRuleContainer(options, item) {
             var ruleId = options.status.id + '_rule_' + options.status.ruleId++;
             var filtersTpl = options.filtersTpl, operatorsTpl = options.operatorsTpl, valueTpl = '';
@@ -35,7 +35,7 @@
                 filtersTpl = filtersTpl.replace('="' + item.expression + '"', '="' + item.expression + '"' + ' selected="selected"');
                 operatorsTpl = operatorsTpl.replace('="' + item.operator + '"', '="' + item.operator + '"' + ' selected="selected"');
                 valueTpl = item.value[0];
-            } 
+            }
             var tpl = [
                 '<li id="' + ruleId + '" class="rule-container">',
                     '<div class="rule-header">',
@@ -57,18 +57,18 @@
             ].join('');
             return tpl;
         };
-        
+
         function createRuleGroupContainer(options, settings) {
             settings = settings || {};
             var initTpl = settings.initTpl || '<rule-group-detail/>', andCls = 'active', orCls = '',
                 btnTpl = settings.isRoot ? '' : '<button type="button" class="btn btn-xs btn-primary handle deleteGroup" data-delete="group"><span class="glyphicon glyphicon-remove"></span> 删除</button>';
             var groupId = options.status.id + '_group_' + options.status.groupId++;
-            
+
             if (settings.logicOperator === 'OR') {
-                andCls = ''; 
+                andCls = '';
                 orCls = 'active';
             }
-            
+
             var tpl = [
                 '<dl id="' + groupId + '" class="rules-group-container">',
                     '<dt class="rules-group-header">',
@@ -90,7 +90,7 @@
             ].join('');
             return tpl;
         };
-        
+
         function recursionInitContainer(predicates, options) {
             var i = 0, length = predicates.length, predicate = null, result = [], temp = null;
             for (; i < length; i++) {
@@ -106,17 +106,17 @@
             }
             return result.join('');
         }
-        
+
         function initOptionsTpl(options) {
-            var operatorsTpl = [], operators = options.operators || [], 
+            var operatorsTpl = [], operators = options.operators || [],
                 labelKey = options.operatorLabelField, valueKey = options.operatorValueField;
             for (var i = 0, length = operators.length, item = null; i < length; i++) {
                 item = operators[i];
                 operatorsTpl.push('<option value="' + item[valueKey] + '">' + item[labelKey] + '</option>');
             }
             options.operatorsTpl = operatorsTpl.join('');
-            
-            var filtersTpl = [], filters = options.filters || [], 
+
+            var filtersTpl = [], filters = options.filters || [],
                 labelKey = options.filterLabelField, valueKey = options.filterValueField;
             for (var i = 0, length = filters.length, item = null; i < length; i++) {
                 item = filters[i];
@@ -124,7 +124,7 @@
             }
             options.filtersTpl = filtersTpl.join('');
         }
-        
+
         function generateContent(options) {
             initOptionsTpl(options);
             var groupTpl = '', ruleTpl = '', filterPlugin = options.filterPlugin || {}, selectors = null,
@@ -136,13 +136,13 @@
             }
             groupTpl = createRuleGroupContainer(options, {'isRoot': true, 'initTpl': ruleTpl, 'logicOperator' : data.operator});
             this.empty().off('click.queryCondition').addClass('query-condition form-inline').html(groupTpl);
-            
+
             if (filterPlugin.type && filterPlugin.config) {
                 selectors = $('.rule-filter-container select', this);
                 selectors[filterPlugin.type] && selectors[filterPlugin.type](filterPlugin.config);
             }
         };
-        
+
         function bindEvent(options) {
             this.on('click.queryCondition', '.group-conditions .btn', function (e) {
                 var $this = $(this), $parent = $this.parent();
@@ -151,7 +151,7 @@
                     $this.addClass('active');
                 }
             });
-            
+
             this.on('click.queryCondition', '.handle', function (e) {
                 var $this = $(this), ruleTpl = '', groupTpl = '', idReg = /id="(\S*)" class="rule-container"/, matchResult = [],
                     filterPlugin = options.filterPlugin || {}, selector = null,
@@ -162,7 +162,7 @@
                     ruleTpl = createRuleContainer(options);
                     matchResult = ruleTpl.match(idReg) || [];
                     $('> .rules-group-body > .rules-list', $groupContainer).append(ruleTpl);
-                    
+
                     if (filterPlugin.type && filterPlugin.config) {
                         selector = $('#' + matchResult[1] + ' .rule-filter-container select');
                         selector[filterPlugin.type] && selector[filterPlugin.type](filterPlugin.config);
@@ -172,7 +172,7 @@
                     matchResult = ruleTpl.match(idReg) || [];
                     groupTpl = createRuleGroupContainer(options, {'initTpl': ruleTpl});
                     $('> .rules-group-body > .rules-list', $groupContainer).append(groupTpl);
-                    
+
                     if (filterPlugin.type && filterPlugin.config) {
                         selector = $('#' + matchResult[1] + ' .rule-filter-container select');
                         selector[filterPlugin.type] && selector[filterPlugin.type](filterPlugin.config);
@@ -181,16 +181,16 @@
                     $groupContainer.remove();
                 }
             });
-            
+
         };
-        
+
         function init(options) {
             options = $.extend({}, defaultOptions, options);
             this.data('options', options);
             generateContent.call(this, options);
             bindEvent.call(this, options);
         };
-       
+
         function recursionGetRule(root) {
             var result = {'predicates' : []}, i = 0, $child = null, tempResult = null,
                 children = $('> .rules-group-body > .rules-list', root).children(), length = children.length;
@@ -213,13 +213,13 @@
                     }
                 }
             }
-            
+
             return result;
         }
-       
+
         this.getRules = function () {
             var root = $('> .rules-group-container', this), status = true, result = {'predicates' : []};
-            
+
             $('.rule-container', root).each(function () {
                 var filterValue = $('.rule-filter-container select', this).val();
                 var actualValue = $('.rule-value-container input', this).val();
@@ -232,14 +232,14 @@
                     $('.error-container', this).removeAttr('title');
                 }
             });
-            
+
             if (status) {
                 result = recursionGetRule(root);
             }
-            
+
             return result;
         };
-        
+
         this.setRules = function (rules) {
             var options = this.data('options');
             options.status = {
@@ -251,7 +251,7 @@
             init.call(this, options);
             return this;
         };
-        
+
         this.reset = function () {
             var options = this.data('options');
             options.status = {
@@ -263,7 +263,24 @@
             init.call(this, options);
             return this;
         };
-        
+
+        this.validate = function () {
+            var status = true;
+            $('.rule-container', this).each(function () {
+                var filterValue = $('.rule-filter-container select', this).val();
+                var actualValue = $('.rule-value-container input', this).val();
+                if (!$.trim(filterValue) || !$.trim(actualValue)) {
+                    $(this).addClass('has-error');
+                    $('.error-container', this).attr('title', '存在空值');
+                    status = false;
+                } else {
+                    $(this).removeClass('has-error');
+                    $('.error-container', this).removeAttr('title');
+                }
+            });
+            return status;
+        };
+
         this.__constructor = function (options, params) {
             if (toString.call(options) === '[object Object]') {
                 init.call(this, options);
@@ -276,7 +293,7 @@
                 }
             }
         };
-        
+
         return this.__constructor(options, params);
     };
 })(jQuery);
